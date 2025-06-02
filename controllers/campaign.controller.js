@@ -7,8 +7,6 @@ import CommunicationLog from "../models/communicationLog.model.js";
 import Customer from "../models/customer.model.js";
 import { generateSequence } from "../utils/generateSequence.js";
 
-
-// Helper: Build MongoDB filter from rules
 const buildMongoQueryFromRules = (rules = []) => {
   const query = {};
 
@@ -56,7 +54,6 @@ const buildMongoQueryFromRules = (rules = []) => {
   return query;
 };
 
-// 📤 Preview Matching Customers
 export const previewCampaign = async (req, res) => {
   try {
     const { rules = [] } = req.body;
@@ -78,7 +75,6 @@ export const previewCampaign = async (req, res) => {
   }
 };
 
-// 🧨 Create Campaign
 export const createCampaign = async (req, res) => {
   try {
     const {
@@ -90,7 +86,6 @@ export const createCampaign = async (req, res) => {
       rules = [],
     } = req.body;
 
-    // Ensure there are targeting rules
     if (!rules.length) {
       return res.status(400).json({
         success: false,
@@ -98,19 +93,14 @@ export const createCampaign = async (req, res) => {
       });
     }
 
-    // Generate sequential campaign ID
     const campaignId = await generateSequence("campaign_seq");
 
-    // Convert targeting rules to MongoDB query filter
     const filter = buildMongoQueryFromRules(rules);
 
-    // Find customers matching the rules; only fetch customerId field
     const matchingCustomers = await Customer.find(filter, { customerId: 1 });
 
-    // Extract customer IDs
     const targetCustomers = matchingCustomers.map((c) => c.customerId);
 
-    // Create the campaign document
     const newCampaign = new Campaign({
       campaignId: `CAMP${campaignId.toString().padStart(3, "0")}`,
       name,
@@ -130,15 +120,11 @@ export const createCampaign = async (req, res) => {
 
     await newCampaign.save();
 
-    // Create the list of customers with delivery status
     const customerStatusList = matchingCustomers.map(({ customerId }) => ({
       customerId,
       status: "delivered", // You can change this logic based on actual delivery status
     }));
 
-
-
-    // Create a campaign history record linked to this campaign
     const newCampaignHistory = new CampaignHistory({
       campaign: newCampaign._id,
       segmentRules: rules,
@@ -152,7 +138,6 @@ export const createCampaign = async (req, res) => {
 
     await newCampaignHistory.save();
 
-      // adding all the realted customer to ommunicatiobn log
       const newCommunicationLog = new CommunicationLog({
         campaignId: newCampaign._id,
         customersStatus: customerStatusList,
@@ -160,7 +145,6 @@ export const createCampaign = async (req, res) => {
 
       await newCommunicationLog.save();
 
-    // Return both created campaign and history
     return res.status(201).json({
       success: true,
       message: "Campaign created successfully",
@@ -177,7 +161,6 @@ export const createCampaign = async (req, res) => {
   }
 };
 
-// 🧠 Get All Campaigns
 export const getAllCampaigns = async (req, res) => {
   try {
     const campaigns = await Campaign.find().sort({ createdAt: -1 });
@@ -191,7 +174,6 @@ export const getAllCampaigns = async (req, res) => {
   }
 };
 
-// 📄 Get Campaign By ID
 export const getCampaignById = async (req, res) => {
   try {
     const campaign = await Campaign.findById(req.params.id);
@@ -210,7 +192,6 @@ export const getCampaignById = async (req, res) => {
   }
 };
 
-// ✏ Update Campaign
 export const updateCampaign = async (req, res) => {
   try {
     const { rules = [], ...updateFields } = req.body;
@@ -246,7 +227,6 @@ export const updateCampaign = async (req, res) => {
   }
 };
 
-// ❌ Delete Campaign
 export const deleteCampaign = async (req, res) => {
   try {
     const deleted = await Campaign.findByIdAndDelete(req.params.id);
@@ -263,7 +243,6 @@ export const deleteCampaign = async (req, res) => {
   }
 };
 
-// from the prompt given, generate the filters using Gemini API
 export const parseNaturalLanguageByGemini = async (req, res) => {
 
   const { userInput } = req.body;
@@ -280,9 +259,9 @@ export const parseNaturalLanguageByGemini = async (req, res) => {
 
       Each rule should follow this format:
       {
-        "field": string,         // the name of the field to filter (e.g. "age", "gender", "city", "totalSpent")
-        "operator": string,      // one of: "equals", "not_equals", "greater_than", "less_than", "contains", "in", "between"
-        "value": any             // the value or range to compare, if its a date, generate date in format yyyy-mm--dd
+        "field": string,        
+        "operator": string,     
+        "value": any           
       }
 
       Supported fields include:   "totalSpent", "visits", "lastOrderDate", "email", "name"  speeling must be same
@@ -309,10 +288,8 @@ export const parseNaturalLanguageByGemini = async (req, res) => {
         .status(404)
         .json({ success: false, message: "prompt not found" });
     }
-    //extract the rawtext from gemini response
     const rawText = result?.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
-    //parse the json in the rawtest
     const segmentRules = extractJsonArrayFromText(rawText);
 
     if (!segmentRules) {
