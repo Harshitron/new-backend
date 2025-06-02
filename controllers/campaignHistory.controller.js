@@ -2,7 +2,6 @@ import Campaign from "../models/campaign.model.js";
 import CommunicationLog from "../models/communicationLog.model.js";
 import Customer from "../models/customer.model.js";
 
-// GET /api/campaigns/history?includeCustomers=true
 export const getCampaignHistory = async (req, res) => {
   try {
     const includeCustomers = req.query.includeCustomers === "true";
@@ -17,7 +16,6 @@ export const getCampaignHistory = async (req, res) => {
       campaigns.map(async (campaign) => {
         let log = await CommunicationLog.findOne({ campaignId: campaign._id });
 
-        // 🧠 If log doesn't exist, simulate now
         if (!log) {
           const targetCustomerIds = campaign.targetCustomers || [];
           const total = targetCustomerIds.length;
