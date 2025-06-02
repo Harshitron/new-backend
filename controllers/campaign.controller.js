@@ -2,7 +2,7 @@ import { CountTokensResponse } from "@google/genai";
 import { chatSession } from "../config/GeminiModal.js";
 import { extractJsonArrayFromText } from "../helper/ParseAIResponse.js";
 import Campaign from "../models/campaign.model.js";
-import CampaignHistory from "../models/CAMPAIGNhISTORY.model.js";
+import CampaignHistory from "../models/campaignHistory.model.js";
 import CommunicationLog from "../models/communicationLog.model.js";
 import Customer from "../models/customer.model.js";
 import { generateSequence } from "../utils/generateSequence.js";
